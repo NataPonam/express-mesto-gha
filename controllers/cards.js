@@ -30,7 +30,12 @@ const deleteCard = (req, res) => {
       }
       return res.send(card);
     })
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка при удалении карточки' }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при удалении карточки' });
+      }
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка при удалении карточки' });
+    });
 };
 
 const likeCard = (req, res) => {
@@ -39,17 +44,41 @@ const likeCard = (req, res) => {
     { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
     { new: true },
   )
-    .then((card) => res.send({ data: card }))
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось поставить лайк' }));
+    .then((card) => {
+      if (!card) {
+        return res.status(ERROR_NOT_FOUND).send({ message: 'Не удалось поставить лайк, не найден id' });
+      }
+      return res.send(card);
+    })
+
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        return res.status(BAD_REQUEST).send({
+          message: 'Некорректные данные',
+        });
+      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось поставить лайк' });
+    });
 };
+
 const dislikeCard = (req, res) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } }, // убрать _id из массива
     { new: true },
   )
-    .then((card) => res.send({ data: card }))
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось удалить лайк' }));
+    .then((card) => {
+      if (!card) {
+        return res.status(ERROR_NOT_FOUND).send({ message: 'Не удалось удалить лайк, не найден id' });
+      }
+      return res.send(card);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        return res.status(BAD_REQUEST).send({
+          message: 'Некорректные данные',
+        });
+      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось удалить лайк' });
+    });
 };
 
 module.exports = {
