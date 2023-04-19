@@ -31,7 +31,7 @@ const deleteCard = (req, res) => {
       return res.send(card);
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err.name === 'CastError') {
         return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при удалении карточки' });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка при удалении карточки' });
