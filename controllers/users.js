@@ -41,20 +41,25 @@ const updateUserProfile = (req, res) => {
   const id = req.user;
   const { name, about } = req.body;
 
-  User.findByIdAndUpdate(id, { name, about })
+  User.findByIdAndUpdate(id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь с таким id не найден' });
       } return res.send(user);
     })
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при обновлении пользователя' });
+      } res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' })})
 };
+
+
 
 const updateUserAvatar = (req, res) => {
   const id = req.user;
   const { avatar } = req.body;
 
-  User.findByIdAndUpdate(id, { avatar })
+  User.findByIdAndUpdate(id, { avatar },{ new: true, runValidators: true })
     .then((user) => {
       if (!user) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь с таким id не найден' });
