@@ -4,7 +4,7 @@ const { BAD_REQUEST, ERROR_NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../util
 const getAllCards = (req, res) => {
   Card.find({})
     .then((allCards) => res.send(allCards))
-    .catch((err) => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
 };
 const createCard = (req, res) => {
   const id = req.user;
@@ -30,8 +30,7 @@ const deleteCard = (req, res) => {
       }
       return res.send(card);
     })
-    .catch((err) =>  res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка при удалении карточки' }));
-
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка при удалении карточки' }));
 };
 
 const likeCard = (req, res) => {
@@ -41,7 +40,7 @@ const likeCard = (req, res) => {
     { new: true },
   )
     .then((card) => res.send({ data: card }))
-    .catch((err) => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось поставить лайк' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось поставить лайк' }));
 };
 const dislikeCard = (req, res) => {
   Card.findByIdAndUpdate(
@@ -50,7 +49,7 @@ const dislikeCard = (req, res) => {
     { new: true },
   )
     .then((card) => res.send({ data: card }))
-    .catch((err) => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось удалить лайк' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось удалить лайк' }));
 };
 
 module.exports = {

@@ -19,7 +19,7 @@ const createUser = (req, res) => {
 const getUsers = (req, res) => {
   User.find({ })
     .then((users) => res.send({ data: users }))
-    .catch((err) => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
 };
 
 const getUsersById = (req, res) => {
@@ -47,7 +47,7 @@ const updateUserProfile = (req, res) => {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь с таким id не найден' });
       } return res.send(user);
     })
-    .catch((err) => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
 };
 
 const updateUserAvatar = (req, res) => {
@@ -60,7 +60,7 @@ const updateUserAvatar = (req, res) => {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь с таким id не найден' });
       } return res.send(user);
     })
-    .catch((err) => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось обновить аватар' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось обновить аватар' }));
 };
 module.exports = {
   createUser, getUsers, getUsersById, updateUserProfile, updateUserAvatar,
