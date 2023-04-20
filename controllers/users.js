@@ -1,6 +1,9 @@
+const { Error } = require('mongoose');
+
 const User = require('../models/user');
 const { BAD_REQUEST, ERROR_NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../utils/utils');
 
+//Попыталась применить instanceof Error, подскажите вы это имели ввиду, все верно получилось?
 const createUser = (req, res) => {
   const { name, about, avatar } = req.body;
 
@@ -9,10 +12,9 @@ const createUser = (req, res) => {
       res.send(newUser);
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err instanceof Error) {
         return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при создании пользователя' });
-      }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Данные о пользователе не сохранились' });
+      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Данные о пользователе не сохранились' });
     });
 };
 
@@ -50,22 +52,25 @@ const updateUserProfile = (req, res) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при обновлении пользователя' });
-      } res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' })})
+      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' });
+    });
 };
-
-
 
 const updateUserAvatar = (req, res) => {
   const id = req.user;
   const { avatar } = req.body;
 
-  User.findByIdAndUpdate(id, { avatar },{ new: true, runValidators: true })
+  User.findByIdAndUpdate(id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь с таким id не найден' });
       } return res.send(user);
     })
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось обновить аватар' }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при обновлении аватара' });
+      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось обновить аватар' });
+    });
 };
 module.exports = {
   createUser, getUsers, getUsersById, updateUserProfile, updateUserAvatar,
