@@ -2,6 +2,7 @@ const { Error } = require('mongoose');
 
 const User = require('../models/user');
 const { BAD_REQUEST, ERROR_NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../utils/utils');
+const user = require('../models/user');
 
 //Попыталась применить instanceof Error, подскажите вы это имели ввиду, все верно получилось?
 const createUser = (req, res) => {
@@ -39,6 +40,7 @@ const getUsersById = (req, res) => {
     });
 };
 
+// Подскажите как реализовать логику с функциями декораторами, я меня получается ерунда(((
 const updateUserProfile = (req, res) => {
   const id = req.user;
   const { name, about } = req.body;
