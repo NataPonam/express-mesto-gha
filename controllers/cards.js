@@ -3,7 +3,7 @@ const { BAD_REQUEST, ERROR_NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../util
 
 const getAllCards = (req, res) => {
   Card.find({})
-    .populate('owner')
+    .populate(['owner','likes'])
     .then((allCards) => res.send(allCards))
     .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
 };

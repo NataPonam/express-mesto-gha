@@ -1,22 +1,58 @@
 const { Error } = require('mongoose');
-
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { BAD_REQUEST, ERROR_NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../utils/utils');
-const user = require('../models/user');
+const ConflictError = require('../errors/ConflictError');// 409
+const Unauthorized = require('../errors/Unauthorized');// 401
+const BadRequest = require('../errors/BadRequest');// 400
 
-//Попыталась применить instanceof Error, подскажите вы это имели ввиду, все верно получилось?
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+const createUser = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      throw new Unauthorized('Пользователь с таким email уже существует');
+    }
+    const hash = await bcrypt.hash(password, 10);
+    const newUser = await User.create({ email, password: hash });
+    res.status(200).send({ messsage: `Пользователь ${newUser.email} успешно зарегистрирован` });
+  } catch (error) {
+    if (error.statusCode === 401) {
+      res.status(error.statusCode).send({ message: error.message });
+    } else {
+      res.status(400).send({ message: 'Некорректный запрос серверу' });
+    }
+  }
+};
 
-  User.create({ name, about, avatar })
-    .then((newUser) => {
-      res.send(newUser);
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+  User.findOne({ email })
+
+    .then((user) => {
+      if (!user) {
+        throw new BadRequest('Неверный email или пароль');
+        // res.status(400).send({ message: 'неверный email или пароль' });
+      }
+      bcrypt.compare(password, user.password)
+        .then((isEqual) => {
+          if (!isEqual) {
+            throw new BadRequest('Неверный email или пароль');
+            // res.status(400).send({ message: 'неверный email или пароль' });
+          }
+          const token = jwt.sign({ _id: user._id }, 'что-то очень секретное', { expiresIn: '7d' });
+          res.status(200).send({ token });
+          // res.status(200).send(user);
+        });
     })
-    .catch((err) => {
-      if (err instanceof Error) {
-        return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при создании пользователя' });
-      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Данные о пользователе не сохранились' });
-    });
+    .catch((err) => res.status(400).send({ message: err.message }));
+};
+
+const currentUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .then((user) => res.send(user))
+    .catch(next);
 };
 
 const getUsers = (req, res) => {
@@ -40,7 +76,6 @@ const getUsersById = (req, res) => {
     });
 };
 
-// Подскажите как реализовать логику с функциями декораторами, я меня получается ерунда(((
 const updateUserProfile = (req, res) => {
   const id = req.user;
   const { name, about } = req.body;
@@ -75,5 +110,5 @@ const updateUserAvatar = (req, res) => {
     });
 };
 module.exports = {
-  createUser, getUsers, getUsersById, updateUserProfile, updateUserAvatar,
+  createUser, getUsers, getUsersById, updateUserProfile, updateUserAvatar, login, currentUser,
 };
