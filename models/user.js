@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
-// const bcrypt = require('bcryptjs');
 const isEmail = require('validator/lib/isEmail');
+const isURL = require('validator/lib/isURL');
+// const regExp = require('../utils/validation');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -17,6 +18,10 @@ const userSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
+    validate: {
+      validator: (v) => isURL(v),
+      message: 'Неверный формат ссылки',
+    },
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
   },
   email: {
@@ -30,8 +35,9 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    minlength: 1,
+    minlength: 8,
     required: true,
+    select: false,
   },
 });
 

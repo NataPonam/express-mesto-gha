@@ -5,8 +5,8 @@ const {
 } = require('../controllers/users');
 
 userRouter.get('/', auth, getUsers);
+userRouter.get('/me', auth, currentUser);
 userRouter.get('/:userId', getUsersById);
-userRouter.get('/me', currentUser);
 userRouter.patch('/me', updateUserProfile);
 userRouter.patch('/me/avatar', updateUserAvatar);
 module.exports = userRouter;
