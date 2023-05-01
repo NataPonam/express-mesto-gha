@@ -1,6 +1,7 @@
 const Card = require('../models/card');
 const { BAD_REQUEST, ERROR_NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../utils/utils');
 
+
 const getAllCards = (req, res) => {
   Card.find({})
     .populate(['owner','likes'])
