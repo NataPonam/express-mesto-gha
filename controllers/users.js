@@ -3,29 +3,36 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { BAD_REQUEST, ERROR_NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../utils/utils');
-// const ConflictError = require('../errors/ConflictError');// 409
+const ConflictError = require('../errors/ConflictError');// 409
 const Unauthorized = require('../errors/Unauthorized');// 401
 const BadRequest = require('../errors/BadRequest');// 400
 const NotFound = require('../errors/NotFound');// 404
 
-const createUser = async (req, res, next) => {
-  const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (user) {
-      next(new Unauthorized('Пользователь с таким email уже существует'));
-    }
-    const hash = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email, password: hash });
-
-    res.status(200).send({ message: `Пользователь ${newUser.email} успешно зарегистрирован` });
-  } catch (error) {
-    if (error.statusCode === 401) {
-      res.status(error.statusCode).send({ message: error.message });
-    } else {
-      res.status(400).send({ message: 'Некорректный запрос серверу' });
-    }
-  }
+const createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
+    .then((newUser) => {
+      res.status(200).send({
+        name: newUser.name,
+        about: newUser.about,
+        avatar: newUser.avatar,
+        email: newUser.email,
+      });
+    })
+    .catch((err) => {
+      if (err.code === 11000) {
+        next(new ConflictError('409!!!Такой у нас уже есть'));
+      } else if (err.name === 'ValidationError') {
+        next(new BadRequest('400 Что-то не то'));
+      }  else {
+        next(err);
+      }
+    });
 };
 
 const login = (req, res) => {
