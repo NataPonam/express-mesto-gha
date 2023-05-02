@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const ConflictError = require('../errors/ConflictError');// 409
+const Unauthorized = require('../errors/Unauthorized');// 401
 const BadRequest = require('../errors/BadRequest');// 400
 const NotFound = require('../errors/NotFound');// 404
 
@@ -31,27 +32,25 @@ const createUser = (req, res, next) => {
     });
 };
 
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
   User.findOne({ email }).select('+password')
 
     .then((user) => {
       if (!user) {
-        throw new BadRequest('Неверный email или пароль');
-        // res.status(400).send({ message: 'неверный email или пароль' });
+        throw new Unauthorized('Неверный email или пароль');
       }
       bcrypt.compare(password, user.password)
         .then((isEqual) => {
           if (!isEqual) {
-            throw new BadRequest('Неверный email или пароль');
-            // res.status(400).send({ message: 'неверный email или пароль' });
+            throw new Unauthorized('Неверный email или пароль');
           }
           const token = jwt.sign({ _id: user._id }, 'что-то очень секретное', { expiresIn: '7d' });
           res.status(200).send({ token });
           // res.status(200).send(user);
         });
     })
-    .catch((err) => res.status(400).send({ message: err.message }));
+    .catch(next);
 };
 
 const currentUser = (req, res, next) => {
