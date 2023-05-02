@@ -29,7 +29,7 @@ const createUser = (req, res, next) => {
         next(new ConflictError('409!!!Такой у нас уже есть'));
       } else if (err.name === 'ValidationError') {
         next(new BadRequest('400 Что-то не то'));
-      }  else {
+      } else {
         next(err);
       }
     });

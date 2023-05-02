@@ -1,9 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { celebrate } = require('celebrate');
+const { errors } = require('celebrate');
+const { Joi } = require('celebrate');
 const router = require('./routes');
 const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
+// const RegExp = require('./utils/validation');
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -23,6 +26,7 @@ app.post('/signin', celebrate(signInValidation), login);
 
 app.use(auth);
 app.use(router);
+app.use(errors());
 
 app.use((err, req, res, next) => {
   // если у ошибки нет статуса, выставляем 500
