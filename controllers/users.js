@@ -22,14 +22,23 @@ const createUser = (req, res, next) => {
         email: newUser.email,
       });
     })
+
     .catch((err) => {
+      if (err.code === 11000) {
+        next(new ConflictError('Пользователь с данной почтой уже зарегистрирован' ));
+      }
+    });
+
+
+
+    /*.catch((err) => {
       if (err.code === 11000) {
         return next(new ConflictError('Пользователь с данной почтой уже зарегистрирован'));
       } if (err.name === 'ValidationError') {
         return next(new BadRequest('Некорректный запрос'));
       }
       return next(err);
-    });
+    });*/
 };
 
 const login = (req, res, next) => {
