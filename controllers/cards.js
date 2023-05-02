@@ -1,14 +1,16 @@
 const Card = require('../models/card');
-const { BAD_REQUEST, ERROR_NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../utils/utils');
+const BadRequest = require('../errors/BadRequest');// 400
+const Forbidden = require('../errors/Forbidden');// 403
+const NotFound = require('../errors/NotFound');// 404
 
-
-const getAllCards = (req, res) => {
+const getAllCards = (req, res, next) => {
   Card.find({})
-    .populate(['owner','likes'])
+    .populate(['owner', 'likes'])
     .then((allCards) => res.send(allCards))
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
+    .catch(next);
 };
-const createCard = (req, res) => {
+
+const createCard = (req, res, next) => {
   const id = req.user;
   const { name, link } = req.body;
 
@@ -16,31 +18,33 @@ const createCard = (req, res) => {
     .then((newCard) => res.status(201).send(newCard))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при создании карточки' });
+        return next(new BadRequest('Некорректные данные при создании карточки'));
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Карточка не сохранилась' });
+      return next(err);
     });
 };
 
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
 
   Card.findByIdAndDelete({ _id: cardId })
     .then((card) => {
       if (!card) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Не удалось удалить карточку, не найден id' });
+        return next(new NotFound('Не удалось удалить карточку, не найден id'));
+      } if (!card.owner.equals(req.user._id)) {
+        return next(new Forbidden('Невозможно удалить чужую карточку'));
       }
-      return res.send(card);
+      return res.send({ message: 'Карточка удалена' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при удалении карточки' });
+        return next(new BadRequest('Некорректные данные при удалении карточки'));
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка при удалении карточки' });
+      return next(err);
     });
 };
 
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
@@ -49,21 +53,21 @@ const likeCard = (req, res) => {
     .populate('owner')
     .then((card) => {
       if (!card) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Не удалось поставить лайк, не найден id' });
+        return next(new NotFound('Не удалось поставить лайк, не найден id'));
       }
       return res.send(card);
     })
 
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(BAD_REQUEST).send({
-          message: 'Некорректные данные',
-        });
-      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось поставить лайк' });
+        return next(new BadRequest('Некорректные данные'));
+        // return res.status(BAD_REQUEST).send({          message: 'Некорректные данные',        });
+      } return next(err);
+      // return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось поставить лайк' });
     });
 };
 
-const dislikeCard = (req, res) => {
+const dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } }, // убрать _id из массива
@@ -71,16 +75,14 @@ const dislikeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Не удалось удалить лайк, не найден id' });
+        return next(new NotFound('Не удалось удалить лайк, не найден id'));
       }
       return res.send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(BAD_REQUEST).send({
-          message: 'Некорректные данные',
-        });
-      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось удалить лайк' });
+        return next(new BadRequest('Некорректные данные'));
+      } return next(err);
     });
 };
 

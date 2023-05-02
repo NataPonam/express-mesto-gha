@@ -1,10 +1,7 @@
-// const { Error } = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const { BAD_REQUEST, ERROR_NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../utils/utils');
 const ConflictError = require('../errors/ConflictError');// 409
-const Unauthorized = require('../errors/Unauthorized');// 401
 const BadRequest = require('../errors/BadRequest');// 400
 const NotFound = require('../errors/NotFound');// 404
 
@@ -26,12 +23,11 @@ const createUser = (req, res, next) => {
     })
     .catch((err) => {
       if (err.code === 11000) {
-        next(new ConflictError('409!!!Такой у нас уже есть'));
-      } else if (err.name === 'ValidationError') {
-        next(new BadRequest('400 Что-то не то'));
-      } else {
-        next(err);
+        return next(new ConflictError('Пользователь с данной почтой уже зарегистрирован'));
+      } if (err.name === 'ValidationError') {
+        return next(new BadRequest('Некорректный запрос'));
       }
+      return next(err);
     });
 };
 
@@ -69,58 +65,60 @@ const currentUser = (req, res, next) => {
     .catch((err) => { next(err); });
 };
 
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   User.find({ })
     .then((users) => res.send({ data: users }))
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' }));
+    .catch((err) => { next(err); });
 };
 
-const getUsersById = (req, res) => {
+const getUsersById = (req, res, next) => {
   const { userId } = req.params;
   User.findById(userId)
     .then((user) => {
       if (user) { return res.send(user); }
-      return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь с таким id не найден' });
+      return next(new NotFound('Пользователь с таким id не найден'));
+      // return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь с таким id не найден' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(BAD_REQUEST).send({ message: 'Некорректные данные пользователя' });
+        return next(new BadRequest('Некорректные данные пользователя'));
+        // return res.status(BAD_REQUEST).send({ message: 'Некорректные данные пользователя' });
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' });
+      return next(err);
     });
 };
 
-const updateUserProfile = (req, res) => {
+const updateUserProfile = (req, res, next) => {
   const id = req.user;
   const { name, about } = req.body;
 
   User.findByIdAndUpdate(id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь с таким id не найден' });
+        return next(new NotFound('Пользователь с таким id не найден'));
       } return res.send(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при обновлении пользователя' });
-      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на стороне сервера' });
+        return next(new BadRequest('Некорректные данные при обновлении пользователя'));
+      } return next(err);
     });
 };
 
-const updateUserAvatar = (req, res) => {
+const updateUserAvatar = (req, res, next) => {
   const id = req.user;
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь с таким id не найден' });
+        return next(new NotFound('Пользователь с таким id не найден'));
       } return res.send(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(BAD_REQUEST).send({ message: 'Некорректные данные при обновлении аватара' });
-      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Не удалось обновить аватар' });
+        return next(new BadRequest('Некорректные данные при обновлении аватара'));
+      } return next(err);
     });
 };
 module.exports = {
