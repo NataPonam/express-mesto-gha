@@ -25,20 +25,27 @@ const createCard = (req, res, next) => {
 };
 
 const deleteCard = (req, res, next) => {
-  const { cardId } = req.params;
-
-  Card.findByIdAndDelete({ _id: cardId })
+  const idUser = req.user._id;
+  Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
-        return next(new NotFound('Не удалось удалить карточку, не найден id'));
-      } if (!card.owner.equals(req.user._id)) {
-        return next(new Forbidden('Невозможно удалить чужую карточку'));
+        next(new NotFound('Карточки с указанным id не существует'));
+        return;
       }
-      return res.send({ message: 'Карточка удалена' });
+      if (card.owner.toString() === idUser) {
+        Card.deleteOne()
+          .then(() => {
+            res.send({ message: 'Карточка успешно удалена' });
+          }).catch((err) => {
+            next(err);
+          });
+      } else {
+        next(new Forbidden('нВы не можете удалить чужую карточку'));
+      }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return next(new BadRequest('Некорректные данные при удалении карточки'));
+        return next(new BadRequest('Переданы некорректные данные '));
       }
       return next(err);
     });
