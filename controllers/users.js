@@ -26,7 +26,9 @@ const createUser = (req, res, next) => {
     .catch((err) => {
       if (err.code === 11000) {
         next(new ConflictError('Пользователь с данной почтой уже зарегистрирован' ));
-      }
+      }else if (err.name === 'ValidationError') {
+        return next(new BadRequest('Некорректные данные при обновлении пользователя'));
+      } return next(err);
     });
 };
 
@@ -38,7 +40,7 @@ const login = (req, res, next) => {
       if (!user) {
         throw new Unauthorized('Неверный email или пароль');
       }
-      bcrypt.compare(password, user.password)
+     return bcrypt.compare(password, user.password)
         .then((isEqual) => {
           if (!isEqual) {
             throw new Unauthorized('Неверный email или пароль');
